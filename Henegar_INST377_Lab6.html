@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map of US</title>
+    <!--  leaflet CSS with integrity attribute -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        body, .marker-info {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 16px;
+            color: #000;
+        }
+        .marker-info {
+            margin-top: 10px;
+        }
+        /* bold styling for marker labels */
+        .marker-label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Map of US</h1>
+    <div id="map"></div>
+    <div id="marker-info" class="marker-info"></div>
+
+    <!-- leaflet JavaScript with integrity attribute -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script>
+        // initialize the map centered over the US
+        const map = L.map('map').setView([37.0902, -95.7129], 4);
+
+        // set up the tile layer for the map
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // generate random coordinates within a range
+        function getRandomInRange(from, to, fixed) {
+            return (Math.random() * (to - from) + from).toFixed(fixed) * 1;
+        }
+
+        // generate three random coordinates
+        const markersData = [
+            { latitude: getRandomInRange(30, 35, 3), longitude: getRandomInRange(-90, -100, 3) },
+            { latitude: getRandomInRange(30, 35, 3), longitude: getRandomInRange(-90, -100, 3) },
+            { latitude: getRandomInRange(30, 35, 3), longitude: getRandomInRange(-90, -100, 3) },
+        ];
+
+        //  container for marker information
+        const markerInfoDiv = document.getElementById('marker-info');
+
+        // fetch locality information and add markers to map
+        markersData.forEach((coords, index) => {
+            const marker = L.marker([coords.latitude, coords.longitude]).addTo(map);
+            const markerText = `Marker ${index + 1}: Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`;
+
+            // add each marker information to the markerInfoDiv
+            const infoElement = document.createElement('div');
+            infoElement.innerHTML = `<p><span class="marker-label">${markerText}</span></p><p>Loading locality...</p>`;
+            markerInfoDiv.appendChild(infoElement);
+
+            // fetch locality using API and update marker information
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.latitude}&longitude=${coords.longitude}&localityLanguage=en`)
+                .then(response => response.json())
+                .then(data => {
+                    const locality = data.locality || 'Locality not found';
+                    infoElement.innerHTML = `<p><span class="marker-label">${markerText}</span></p><p>Locality: ${locality}</p>`;
+                })
+                .catch(error => {
+                    infoElement.innerHTML += `<p>Error fetching locality: ${error.message}</p>`;
+                });
+        });
+    </script>
+
+</body>
+</html>
